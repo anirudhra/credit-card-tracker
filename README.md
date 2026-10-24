@@ -29,7 +29,7 @@ The repository includes a `Dockerfile` and `docker-compose.yml` that run the app
 ### Start the Container
 
 ```bash
-git clone <your-repo-url> credit-card-tracker
+git clone https://github.com/anirudhra/credit-card-tracker credit-card-tracker
 cd credit-card-tracker
 docker compose up -d --build
 ```
