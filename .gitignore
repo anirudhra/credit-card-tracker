@@ -1,0 +1,21 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local SQLite database & runtime data (auto-created on first startup)
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Exported backups
+*backup*.json
+
+# Environment & OS files
+.env
+.venv/
+venv/
+.DS_Store
+Thumbs.db

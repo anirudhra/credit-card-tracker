@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Credit Card Tracker</title>
+  <link rel="stylesheet" href="/styles.css?v=5" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Navigation & Mode Switcher -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="sapphire-gem" aria-hidden="true">◆</div>
+        <div>
+          <h1>Credit Card Tracker</h1>
+          <p class="subtitle">Live Merchant Advisor, Rotating Categories &amp; Benefits Tracker (7 Cards)</p>
+        </div>
+      </div>
+
+      <!-- Primary View Switcher (Landing Page vs. Perks Bubble Tracker) -->
+      <div class="primary-mode-tabs" role="tablist">
+        <button type="button" class="mode-tab active" id="tabBtnAdvisor" data-view="advisor">
+          🧭 Which Card to Use Today
+        </button>
+        <button type="button" class="mode-tab" id="tabBtnTracker" data-view="tracker">
+          📊 Perks &amp; Bubbles Tracker
+        </button>
+      </div>
+
+      <div class="topbar-controls">
+        <div class="control-group">
+          <label for="yearSelect">Year</label>
+          <select id="yearSelect" aria-label="Select Year">
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+
+        <div class="topbar-actions">
+          <button id="btnSyncIssuers" class="btn btn-secondary" title="Syncs automatically on your first visit each day; click to force a manual sync now">
+            🔄 Sync With Vendors
+          </button>
+          <button id="btnAddCard" class="btn btn-secondary" title="Add another card or preset">
+            + Card
+          </button>
+          <button id="btnAddPerk" class="btn btn-primary">
+            + Custom Perk
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ================================================================== -->
+    <!-- VIEW 1 (DEFAULT LANDING PAGE): WHICH CARD TO USE TODAY             -->
+    <!-- ================================================================== -->
+    <div id="viewAdvisor">
+      <!-- Live Issuer Website Query Status Bar -->
+      <section class="sync-status-bar">
+        <div class="sync-bar-main">
+          <span class="sync-dot-online"></span>
+          <strong id="syncSummaryLabel">Live Issuer Websites Queried (7/7 Online)</strong>
+          <span class="sync-timestamp" id="syncTimestampLabel"></span>
+        </div>
+        <div class="sync-bar-actions">
+          <button type="button" class="btn btn-sm btn-outline" id="btnToggleSyncDetails">
+            🌐 View Live Website Sources &amp; Rules ▾
+          </button>
+        </div>
+      </section>
+
+      <!-- Collapsible Live Website Sources Details -->
+      <section class="sync-sources-drawer" id="syncSourcesDrawer" hidden>
+        <div class="sync-sources-grid" id="syncSourcesGrid"></div>
+      </section>
+
+      <!-- Active Quarter Rotating Categories Spotlight Banner -->
+      <section class="quarter-spotlight" id="quarterSpotlight"></section>
+
+      <!-- Search & Category Filter Controls -->
+      <section class="advisor-search-bar">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            id="merchantSearchInput"
+            placeholder="Type ANY store, website, museum, or bill (e.g. Trader Joe's, Chewy, 7-Eleven, IKEA, Airbnb, Sephora, LACMA, ConEd)..."
+            autocomplete="off"
+          />
+          <button type="button" class="btn btn-sm btn-primary" id="btnLiveVendorLookup">Ask Live Lookup</button>
+          <button type="button" class="btn btn-sm btn-outline" id="btnClearSearch" hidden>Clear</button>
+        </div>
+
+        <!-- Dynamic Live Vendor Lookup Result Box (Scraped Issuer Vendors + Live Web Classifier) -->
+        <div id="liveVendorResultBox" class="live-vendor-box" hidden></div>
+
+        <div class="filter-tabs" id="advisorGroupTabs">
+          <button class="filter-tab active" data-group="all">All Currently Valid (16)</button>
+          <button class="filter-tab" data-group="rotating">🔥 Active Rotating 5%</button>
+          <button class="filter-tab" data-group="needs_activation">⚠️ Needs Activation</button>
+          <button class="filter-tab" data-group="shopping">🛍️ Shopping (Amazon, CVS, eBay, Gap)</button>
+          <button class="filter-tab" data-group="bills">📺 Bills (TV, Internet, Phone, Utilities)</button>
+          <button class="filter-tab" data-group="travel">✈️ Hotels, Flights &amp; Rideshare</button>
+          <button class="filter-tab" data-group="daily">🛒 Grocery, Gas &amp; Dining</button>
+        </div>
+      </section>
+
+      <!-- SECTION 1: CURRENTLY VALID DEALS & MULTIPLIERS -->
+      <section class="advisor-section-block" id="currentlyValidSection">
+        <div class="section-divider-header">
+          <div>
+            <span class="section-pill pill-valid">SECTION 1 • CURRENTLY VALID</span>
+            <h2 id="currentlyValidHeading">Active Rates, Credits &amp; Rotating Categories Valid Today</h2>
+            <p class="section-sub">Expired quarters (such as Q1, Q2, and Q3) are excluded so you only see the exact card and bonus rate valid right now.</p>
+          </div>
+        </div>
+        <div class="advisor-cards-grid" id="advisorCardsGrid" aria-live="polite"></div>
+      </section>
+
+      <!-- SECTION 2: UPCOMING IN NEXT MONTH / NEXT QUARTER -->
+      <section class="advisor-section-block upcoming-section-block" id="upcomingSection">
+        <div class="section-divider-header">
+          <div>
+            <span class="section-pill pill-upcoming">SECTION 2 • UPCOMING ROTATIONS &amp; RESETS</span>
+            <h2 id="upcomingHeading">Upcoming in the Next Month, Quarter &amp; Renewal Cycle</h2>
+            <p class="section-sub">Upcoming monthly statement credit resets, next Bank of America Museums on Us weekend, cardmember anniversary renewal, and next quarter's 5% rotation.</p>
+          </div>
+        </div>
+        <div class="upcoming-rotations-grid" id="upcomingRotationsGrid" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- VIEW 2: INTERACTIVE PERKS & BUBBLES TRACKER                        -->
+    <!-- ================================================================== -->
+    <div id="viewTracker" hidden>
+      <!-- Quick Card Switcher Strip -->
+      <div class="tracker-header-row">
+        <nav class="wallet-strip" id="walletStrip" aria-label="Quick Card Switcher"></nav>
+        <div class="tracker-card-controls">
+          <select id="cardSelect" aria-label="Select Active Card"></select>
+          <button id="btnCardSettings" class="btn btn-secondary" title="Configure Annual Fee, Anniversary Date &amp; Webhooks">
+            ⚙️ Card Settings
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Card Earning Multipliers Banner -->
+      <section class="earning-banner" id="earningBanner">
+        <span class="earning-tag">⚡ Card Multipliers</span>
+        <span id="earningSummaryText"></span>
+      </section>
+
+      <!-- Hero ROI & Breakeven Calculator -->
+      <section class="roi-hero" id="roiHero">
+        <div class="roi-cards-grid">
+          <div class="metric-card">
+            <span class="metric-label">Realized Credits / Rewards</span>
+            <div class="metric-value" id="metricUsed">$0.00</div>
+            <span class="metric-sub" id="metricUsedSub">of $0.00 available</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-label">Effective Annual Fee</span>
+            <div class="metric-value" id="metricFee">$795.00</div>
+            <span class="metric-sub" id="metricFeeSub">Anniversary: Nov 1</span>
+          </div>
+
+          <div class="metric-card highlight-card" id="netValueCard">
+            <span class="metric-label">Net Return (ROI vs. Fee)</span>
+            <div class="metric-value" id="metricNet">-$795.00</div>
+            <span class="metric-sub" id="metricNetSub">$795.00 left to break even</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-label">Total Card Potential</span>
+            <div class="metric-value" id="metricAllMax">$2,624.00</div>
+            <span class="metric-sub" id="metricAllSub">Hard credits + subscriptions</span>
+          </div>
+        </div>
+
+        <!-- Breakeven Progress Bar -->
+        <div class="breakeven-container">
+          <div class="breakeven-header">
+            <div>
+              <strong>Annual Fee Breakeven &amp; Utilization Progress</strong>
+              <span class="breakeven-badge" id="breakevenBadge">0% of Annual Fee Recovered</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleLifestyleRoi" />
+              <span>Count Lifestyle Perks (DashPass, Apple TV+/Music, Museums on Us) toward ROI</span>
+            </label>
+          </div>
+
+          <div class="progress-track-wrapper">
+            <div class="progress-track">
+              <div class="progress-fill" id="breakevenFill" style="width: 0%"></div>
+              <div class="breakeven-marker" id="breakevenMarker" style="left: 36%">
+                <span class="marker-label" id="breakevenMarkerLabel">AF $795</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="roi-quick-toolbar">
+            <div class="category-pills" id="categoryBreakdownPills"></div>
+            <div class="utility-buttons">
+              <button id="btnDownloadIcs" class="btn btn-sm btn-outline" title="Download .ics calendar reminders for unused credits">
+                📅 Export .ics Calendar
+              </button>
+              <button id="btnWebhookDigest" class="btn btn-sm btn-outline" title="Preview or send expiring credits webhook notification">
+                🔔 Webhook Digest
+              </button>
+              <button id="btnExportJson" class="btn btn-sm btn-outline" title="Backup database to JSON">
+                ⬇️ Backup JSON
+              </button>
+              <label class="btn btn-sm btn-outline file-label" title="Restore from JSON backup">
+                ⬆️ Restore JSON
+                <input type="file" id="inputImportJson" accept=".json" hidden />
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Expiring Soon Alert Strip -->
+      <section class="expiring-banner" id="expiringBanner" hidden>
+        <div class="expiring-header">
+          <span class="pulse-dot"></span>
+          <strong id="expiringTitle">Expiring Soon in Current Period</strong>
+          <span class="expiring-hint">Click any alert chip to jump to that perk</span>
+        </div>
+        <div class="expiring-chips" id="expiringChips"></div>
+      </section>
+
+      <!-- Filter & Instructions Bar -->
+      <section class="filter-bar">
+        <div class="filter-tabs" id="frequencyTabs">
+          <button class="filter-tab active" data-filter="all">All Perks</button>
+          <button class="filter-tab" data-filter="monthly">Monthly</button>
+          <button class="filter-tab" data-filter="semi_annual">Quarterly / Rotating / 2x Yr</button>
+          <button class="filter-tab" data-filter="annual_group">Annual / Anniversary / 4-Yr</button>
+          <button class="filter-tab" data-filter="unactivated">⚠️ Needs Activation <span id="unactivatedCountBadge" class="tab-badge">0</span></button>
+        </div>
+        <div class="interaction-tip">
+          💡 <strong>Click a bubble</strong> to toggle 100%, or <strong>right-click / click ✎</strong> for partial amounts, swipe counts &amp; notes.
+        </div>
+      </section>
+
+      <!-- Interactive Perk Cards List -->
+      <main class="perks-list" id="perksList" aria-live="polite"></main>
+    </div>
+  </div>
+
+  <!-- Modal: Partial Amount / Note Editor for a Period Bubble -->
+  <div class="modal-backdrop" id="modalUsage" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="usageModalTitle">Update Period Credit</h3>
+        <button class="modal-close" data-close="modalUsage">&times;</button>
+      </div>
+      <form id="formUsage">
+        <input type="hidden" id="usagePerkId" />
+        <input type="hidden" id="usagePeriodKey" />
+        <p class="modal-subtitle" id="usageModalSubtitle"></p>
+
+        <div class="form-row">
+          <label for="usageAmountInput" id="usageAmountLabel">Amount Used ($)</label>
+          <div class="amount-input-group">
+            <input type="number" step="0.01" min="0" id="usageAmountInput" required />
+            <button type="button" class="btn btn-sm btn-secondary" id="btnUsageMax">Max</button>
+            <button type="button" class="btn btn-sm btn-outline" id="btnUsageZero">Reset 0</button>
+          </div>
+          <input type="range" id="usageAmountSlider" step="0.5" min="0" max="300" />
+        </div>
+
+        <div class="form-row">
+          <label for="usageDateInput">Date Used</label>
+          <input type="date" id="usageDateInput" />
+        </div>
+
+        <div class="form-row">
+          <label for="usageNotesInput">Notes (e.g. merchant, spend toward cap, order details)</label>
+          <input type="text" id="usageNotesInput" placeholder="e.g. $850/1500 Q4 spend so far, OpenTable dinner..." />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" data-close="modalUsage">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Usage</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Card Settings -->
+  <div class="modal-backdrop" id="modalCardSettings" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Card &amp; Notification Settings</h3>
+        <button class="modal-close" data-close="modalCardSettings">&times;</button>
+      </div>
+      <form id="formCardSettings">
+        <div class="form-row">
+          <label for="cardNameInput">Card Display Name</label>
+          <input type="text" id="cardNameInput" required />
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="cardAnnualFeeInput">Primary Annual Fee ($)</label>
+            <input type="number" step="1" min="0" id="cardAnnualFeeInput" required />
+          </div>
+          <div class="form-row">
+            <label for="cardAnnivDateInput">Cardmember Anniversary Date</label>
+            <input type="date" id="cardAnnivDateInput" required />
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="cardAuFeeInput">Authorized User Fee ($)</label>
+            <input type="number" step="1" min="0" id="cardAuFeeInput" required />
+          </div>
+          <div class="form-row">
+            <label for="cardAuCountInput">Authorized User Count</label>
+            <input type="number" step="1" min="0" id="cardAuCountInput" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <label for="cardWebhookInput">Webhook URL (Discord / Slack / ntfy.sh / Custom JSON)</label>
+          <input type="url" id="cardWebhookInput" placeholder="https://discord.com/api/webhooks/... or https://ntfy.sh/my-csr" />
+        </div>
+        <div class="modal-actions split-actions">
+          <button type="button" class="btn btn-danger" id="btnDeleteCard">Delete Card</button>
+          <div>
+            <button type="button" class="btn btn-outline" data-close="modalCardSettings">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Perk -->
+  <div class="modal-backdrop" id="modalPerk" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="perkModalTitle">Add Custom Perk</h3>
+        <button class="modal-close" data-close="modalPerk">&times;</button>
+      </div>
+      <form id="formPerk">
+        <input type="hidden" id="editPerkId" />
+        <div class="form-row">
+          <label for="perkNameInput">Perk Name</label>
+          <input type="text" id="perkNameInput" placeholder="e.g. 5% Rotating Category or $100 Hotel Credit" required />
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="perkCategoryInput">Category</label>
+            <select id="perkCategoryInput">
+              <option value="Travel">Travel</option>
+              <option value="Dining">Dining</option>
+              <option value="Rotating 5%">Rotating 5% / Spend Cap</option>
+              <option value="Multiplier Bonus">Multiplier Bonus</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Lifestyle">Lifestyle</option>
+              <option value="Fitness">Fitness</option>
+              <option value="Subscriptions">Subscriptions</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="perkTypeInput">Valuation Type</label>
+            <select id="perkTypeInput">
+              <option value="hard_credit">Hard Statement Credit / Cash Reward ($)</option>
+              <option value="lifestyle_perk">Lifestyle / Subscription Perk</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="perkFreqInput">Reset Frequency</label>
+            <select id="perkFreqInput">
+              <option value="monthly">Monthly (12x / yr)</option>
+              <option value="quarterly">Quarterly (All 4 Quarters)</option>
+              <option value="q1_only">Q1 Only (Jan–Mar Rotating)</option>
+              <option value="q2_only">Q2 Only (Apr–Jun Rotating)</option>
+              <option value="q3_only">Q3 Only (Jul–Sep Rotating)</option>
+              <option value="q4_only">Q4 Only (Oct–Dec Rotating)</option>
+              <option value="semi_annual">Semi-Annual (Jan–Jun, Jul–Dec)</option>
+              <option value="semi_annual_bookings">2 Bookings / Year (e.g. The Edit)</option>
+              <option value="annual">Annual (Calendar Year)</option>
+              <option value="anniversary">Cardmember Anniversary Year</option>
+              <option value="quadrennial">Every 4 Years (Global Entry)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="perkAmountInput">Max Value per Period ($)</label>
+            <input type="number" step="0.01" min="0.01" id="perkAmountInput" value="15.00" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <label for="perkCaveatsInput">Caveats / Usage Rules</label>
+          <textarea id="perkCaveatsInput" rows="2" placeholder="Any spending cap ($1,500/qtr, $6,000/yr), portal rules, or enrollment steps..."></textarea>
+        </div>
+        <div class="form-row checkbox-row">
+          <label>
+            <input type="checkbox" id="perkReqActivation" />
+            Requires manual activation in issuer portal
+          </label>
+          <label>
+            <input type="checkbox" id="perkActivationDone" checked />
+            Already activated
+          </label>
+        </div>
+        <div class="modal-actions split-actions">
+          <button type="button" class="btn btn-danger" id="btnDeletePerk" hidden>Delete Perk</button>
+          <div>
+            <button type="button" class="btn btn-outline" data-close="modalPerk">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Perk</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Card -->
+  <div class="modal-backdrop" id="modalAddCard" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Add Card Preset or Custom Card</h3>
+        <button class="modal-close" data-close="modalAddCard">&times;</button>
+      </div>
+      <form id="formAddCard">
+        <div class="form-row">
+          <label for="newCardPresetSelect">Template Preset</label>
+          <select id="newCardPresetSelect">
+            <option value="csr_795">Chase Sapphire Reserve — Refreshed ($795 AF)</option>
+            <option value="chase_freedom">Chase Freedom® ($0 AF — 5% Rotating Quarterly)</option>
+            <option value="discover_it">Discover it® Cash Back ($0 AF — 5% Rotating)</option>
+            <option value="amex_everyday">Amex EveryDay® Credit Card ($0 AF — 20-Swipe Bonus)</option>
+            <option value="amex_bce">Amex Blue Cash Everyday® ($0 AF — Disney/HomeChef/3%)</option>
+            <option value="boa_ccr">Bank of America® Customized Cash Rewards ($0 AF — 3% Choice / 2% Wholesale)</option>
+            <option value="boa_travel">Bank of America® Travel Rewards ($0 AF — 1.5x–2.62x)</option>
+            <option value="csr_550">Chase Sapphire Reserve — Legacy ($550 AF)</option>
+            <option value="custom">Blank Custom Credit Card</option>
+          </select>
+        </div>
+        <div id="customCardFields" hidden>
+          <div class="form-row">
+            <label for="newCardCustomName">Card Name</label>
+            <input type="text" id="newCardCustomName" placeholder="e.g. Amex Platinum / Capital One Venture X" />
+          </div>
+          <div class="form-row">
+            <label for="newCardCustomFee">Annual Fee ($)</label>
+            <input type="number" step="1" min="0" id="newCardCustomFee" value="0" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" data-close="modalAddCard">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Card</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Webhook Digest Preview & Dispatch -->
+  <div class="modal-backdrop" id="modalWebhook" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>🔔 Expiring Credits Digest &amp; Webhook</h3>
+        <button class="modal-close" data-close="modalWebhook">&times;</button>
+      </div>
+      <div class="form-row">
+        <label>Formatted Notification Digest</label>
+        <pre class="webhook-preview" id="webhookPreviewText"></pre>
+      </div>
+      <div class="form-row">
+        <label for="webhookDispatchUrl">Destination Webhook URL</label>
+        <input type="url" id="webhookDispatchUrl" placeholder="https://discord.com/api/webhooks/... or https://ntfy.sh/..." />
+        <small class="form-hint" id="webhookStatusMsg"></small>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="btnCopyDigest">📋 Copy Text</button>
+        <button type="button" class="btn btn-primary" id="btnSendWebhookNow">🚀 Send to Webhook</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js?v=5"></script>
+</body>
+</html>

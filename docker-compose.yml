@@ -1,0 +1,12 @@
+services:
+  credit-card-tracker:
+    build: .
+    container_name: credit-card-tracker
+    restart: unless-stopped
+    ports:
+      - "8795:8795"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8795
