@@ -54,7 +54,7 @@ docker compose down
 The application uses only the Python 3.10+ standard library (`http.server`, `sqlite3`, `urllib`, `json`, `datetime`). No `pip install` or virtual environment is required.
 
 ```bash
-git clone <your-repo-url> credit-card-tracker
+git clone https://github.com/anirudhra/credit-card-tracker credit-card-tracker
 cd credit-card-tracker
 python3 app.py --host 0.0.0.0 --port 8795
 ```
